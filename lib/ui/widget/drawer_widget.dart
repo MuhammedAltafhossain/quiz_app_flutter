@@ -103,7 +103,7 @@ class DrawerWidget extends StatelessWidget {
                 leading: const Icon(Icons.logout),
                 onTap: () async {
                   AuthController().logout().then((value) {
-                    Get.to(const LoginScreen());
+                    Get.offAll(const LoginScreen());
                   });
                 },
               ),

@@ -10,6 +10,8 @@ import '../../data/model/quiz_question.dart';
 class QuizController extends GetxController {
   List<QuizQuestion> fatchQuestions = [];
   List<QuizQuestion> fatchQuestionsOption = [];
+  List<QuizQuestion> fatchStudentQuiz = [];
+  bool fatchStudentQuizInProgress = true;
   bool fetchQuizQuestionsInProgress = true;
   bool quizFatchInProgress = true;
 
@@ -113,5 +115,51 @@ class QuizController extends GetxController {
 
     fatchQuestionsOption = fetchedQuestions;
     update();
+  }
+
+  Future<void> fetchStudentQuizQuestions() async {
+    fatchStudentQuizInProgress = true;
+    update();
+    final quizCollection = FirebaseFirestore.instance.collection('questions');
+    final snapshot = await quizCollection.get();
+    List<QuizQuestion> fetchedQuestions = [];
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+
+      final id = doc.id;
+      final question = data['questionTitle'];
+      final imageUrl = data['imageUrl'];
+      final quizQuestion = QuizQuestion(
+        id: id,
+        questionTitle: question,
+        imageUrl: imageUrl,
+      );
+
+      var quizDataFatch;
+      QuerySnapshot<Map<String, dynamic>> snapshot =
+          await fetchQuizData(id, UserData.id ?? '');
+      for (QueryDocumentSnapshot<Map<String, dynamic>> doc in snapshot.docs) {
+        var quizData = doc.data();
+        quizDataFatch = quizData['quizId'];
+      }
+      fatchStudentQuizInProgress = false;
+      update();
+      if (quizDataFatch == null) {
+        fetchedQuestions.add(quizQuestion);
+      }
+    }
+    print(fetchedQuestions);
+    fatchStudentQuiz = fetchedQuestions;
+    update();
+  }
+
+  Future<QuerySnapshot<Map<String, dynamic>>> fetchQuizData(
+      String quizId, String userId) {
+    return FirebaseFirestore.instance
+        .collection('result')
+        .where('quizId', isEqualTo: quizId)
+        .where('userId', isEqualTo: userId)
+        .get();
   }
 }
